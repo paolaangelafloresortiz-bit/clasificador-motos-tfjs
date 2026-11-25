@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Clasificador de Motos | Machine Learning</title>
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        /* =========================
+           NAVEGACIÓN
+        ========================= */
+
+        nav {
+            height: 70px;
+            background: #101c36;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 7%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #4da3ff;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #4da3ff;
+        }
+
+        /* =========================
+           HERO
+        ========================= */
+
+        .hero {
+            min-height: 520px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 50px;
+
+            padding: 70px 8%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0d1830 0%,
+                    #17365f 55%,
+                    #245a88 100%
+                );
+
+            color: white;
+        }
+
+        .hero-text {
+            max-width: 600px;
+        }
+
+        .hero-text h1 {
+            font-size: 50px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero-text h1 span {
+            color: #4da3ff;
+        }
+
+        .hero-text p {
+            color: #dbe7f5;
+            font-size: 17px;
+            line-height: 1.8;
+        }
+
+        .hero-button {
+            display: inline-block;
+
+            margin-top: 30px;
+
+            padding: 14px 24px;
+
+            background: #4da3ff;
+
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .hero-button:hover {
+            background: #328de4;
+            transform: translateY(-2px);
+        }
+
+        .hero-image {
+            width: 430px;
+            height: 300px;
+
+            border-radius: 20px;
+
+            overflow: hidden;
+
+            border: 1px solid rgba(255,255,255,0.2);
+
+            background: rgba(255,255,255,0.08);
+
+            box-shadow:
+                0 20px 50px rgba(0,0,0,0.25);
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* =========================
+           SECCIONES
+        ========================= */
+
+        section {
+            padding: 75px 8%;
+        }
+
+        .titulo-seccion {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .titulo-seccion h2 {
+            font-size: 32px;
+            color: #101c36;
+            margin-bottom: 12px;
+        }
+
+        .titulo-seccion p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        /* =========================
+           TARJETAS
+        ========================= */
+
+        .motos-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 25px;
+        }
+
+        .moto-card {
+            background: white;
+
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 8px 25px rgba(15, 30, 50, 0.08);
+
+            transition: 0.3s;
+        }
+
+        .moto-card:hover {
+            transform: translateY(-7px);
+
+            box-shadow:
+                0 15px 35px rgba(15, 30, 50, 0.15);
+        }
+
+        .moto-card img {
+            width: 100%;
+            height: 250px;
+
+            object-fit: cover;
+
+            display: block;
+        }
+
+        .moto-info {
+            padding: 22px;
+        }
+
+        .moto-info h3 {
+            color: #101c36;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .moto-info p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* =========================
+           CLASIFICADOR
+        ========================= */
+
+        #clasificar {
+            background: #eaf1f8;
+        }
+
+        .clasificador {
+            max-width: 900px;
+
+            margin: auto;
+
+            background: white;
+
+            padding: 45px;
+
+            border-radius: 20px;
+
+            box-shadow:
+                0 10px 35px rgba(15, 30, 50, 0.10);
+
+            text-align: center;
+        }
+
+        .estado {
+            display: inline-block;
+
+            padding: 10px 18px;
+
+            border-radius: 30px;
+
+            background: #e8f5e9;
+
+            color: #237a3b;
+
+            font-weight: bold;
+
+            font-size: 14px;
+
+            margin-bottom: 25px;
+        }
+
+        .selector {
+            margin: 20px 0;
+        }
+
+        input[type="file"] {
+            max-width: 100%;
+
+            padding: 12px;
+
+            border: 1px solid #d5dce6;
+
+            border-radius: 8px;
+
+            background: #f8fafc;
+
+            cursor: pointer;
+        }
+
+        #preview {
+            display: none;
+
+            width: 500px;
+
+            max-width: 100%;
+
+            max-height: 400px;
+
+            object-fit: contain;
+
+            margin: 30px auto;
+
+            border-radius: 16px;
+
+            box-shadow:
+                0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        #resultado {
+            margin-top: 25px;
+
+            font-size: 30px;
+
+            font-weight: bold;
+
+            color: #101c36;
+        }
+
+        #confianza {
+            margin-top: 12px;
+
+            font-size: 20px;
+
+            color: #237a3b;
+
+            font-weight: bold;
+        }
+
+        /* =========================
+           INFORMACIÓN
+        ========================= */
+
+        .info-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 25px;
+        }
+
+        .info-card {
+            background: white;
+
+            padding: 30px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 7px 25px rgba(15, 30, 50, 0.07);
+        }
+
+        .info-card h3 {
+            color: #101c36;
+
+            margin-bottom: 15px;
+        }
+
+        .info-card p {
+            color: #64748b;
+
+            line-height: 1.7;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+            background: #101c36;
+
+            color: #b8c7d9;
+
+            text-align: center;
+
+            padding: 28px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-image {
+                width: 100%;
+                max-width: 500px;
+            }
+
+            .motos-grid,
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media (max-width: 600px) {
+
+            nav {
+                height: auto;
+                padding: 18px 5%;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            nav ul {
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero {
+                padding: 55px 5%;
+            }
+
+            .hero-text h1 {
+                font-size: 38px;
+            }
+
+            section {
+                padding: 55px 5%;
+            }
+
+            .clasificador {
+                padding: 25px 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVEGACIÓN
+========================= -->
+
+<nav>
+
+    <div class="logo">
+        Moto<span>Class</span>
+    </div>
+
+    <ul>
+
+        <li>
+            <a href="#inicio">Inicio</a>
+        </li>
+
+        <li>
+            <a href="#motos">Motos</a>
+        </li>
+
+        <li>
+            <a href="#clasificar">Clasificar</a>
+        </li>
+
+        <li>
+            <a href="#informacion">Información</a>
+        </li>
+
+    </ul>
+
+</nav>
+
+
+<!-- =========================
+     INICIO
+========================= -->
+
+<section id="inicio" class="hero">
+
+    <div class="hero-text">
+
+        <h1>
+            Clasificador de
+            <span>Motocicletas</span>
+        </h1>
+
+        <p>
+            Aplicación web desarrollada mediante
+            Machine Learning para identificar diferentes
+            tipos de motocicletas utilizando TensorFlow.js.
+        </p>
+
+        <a
+            href="#clasificar"
+            class="hero-button"
+        >
+            Clasificar una moto
+        </a>
+
+    </div>
+
+
+    <div class="hero-image">
+
+        <img
+            src="./imagenes/moto.jpg"
+            alt="Motocicleta"
+        >
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     MOTOS
+========================= -->
+
+<section id="motos">
+
+    <div class="titulo-seccion">
+
+        <h2>
+            Tipos de motos reconocidos
+        </h2>
+
+        <p>
+            El modelo fue entrenado para diferenciar
+            tres categorías de motocicletas.
+        </p>
+
+    </div>
+
+
+    <div class="motos-grid">
+
+
+        <!-- DEPORTIVA -->
+
+        <div class="moto-card">
+
+            <img
+                src="./imagenes/moto.jpg"
+                alt="Moto deportiva"
+            >
+
+            <div class="moto-info">
+
+                <h3>
+                    Moto deportiva
+                </h3>
+
+                <p>
+                    Motocicletas diseñadas principalmente
+                    para rendimiento, velocidad y conducción deportiva.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- NAKED -->
+
+        <div class="moto-card">
+
+            <img
+                src="./imagenes/moto naked.jpg"
+                alt="Moto naked"
+            >
+
+            <div class="moto-info">
+
+                <h3>
+                    Moto naked
+                </h3>
+
+                <p>
+                    Motocicletas de estilo urbano caracterizadas
+                    por una estructura más expuesta y versátil.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- SCOOTER -->
+
+        <div class="moto-card">
+
+            <img
+                src="./imagenes/moto scooter.jpg"
+                alt="Moto scooter"
+            >
+
+            <div class="moto-info">
+
+                <h3>
+                    Moto scooter
+                </h3>
+
+                <p>
+                    Motocicletas orientadas principalmente
+                    a la movilidad urbana y al uso práctico.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     CLASIFICADOR
+========================= -->
+
+<section id="clasificar">
+
+    <div class="titulo-seccion">
+
+        <h2>
+            Clasificar una motocicleta
+        </h2>
+
+        <p>
+            Selecciona una imagen y el modelo realizará
+            automáticamente la predicción.
+        </p>
+
+    </div>
+
+
+    <div class="clasificador">
+
+        <div id="estado" class="estado">
+            Cargando modelo...
+        </div>
+
+
+        <div class="selector">
+
+            <input
+                type="file"
+                id="file-input"
+                accept="image/*"
+            >
+
+        </div>
+
+
+        <img
+            id="preview"
+            alt="Vista previa de la motocicleta"
+        >
+
+
+        <div id="resultado"></div>
+
+        <div id="confianza"></div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     INFORMACIÓN
+========================= -->
+
+<section id="informacion">
+
+    <div class="titulo-seccion">
+
+        <h2>
+            Sobre el proyecto
+        </h2>
+
+        <p>
+            Tecnologías utilizadas para desarrollar
+            el sistema de clasificación.
+        </p>
+
+    </div>
+
+
+    <div class="info-grid">
+
+
+        <div class="info-card">
+
+            <h3>
+                Machine Learning
+            </h3>
+
+            <p>
+                El modelo fue entrenado utilizando imágenes
+                de motocicletas organizadas en diferentes
+                categorías para realizar clasificación automática.
+            </p>
+
+        </div>
+
+
+        <div class="info-card">
+
+            <h3>
+                Teachable Machine
+            </h3>
+
+            <p>
+                Se utilizó Teachable Machine para crear,
+                entrenar y probar el modelo de clasificación
+                mediante imágenes.
+            </p>
+
+        </div>
+
+
+        <div class="info-card">
+
+            <h3>
+                TensorFlow.js
+            </h3>
+
+            <p>
+                TensorFlow.js permite ejecutar el modelo
+                directamente en el navegador y realizar
+                predicciones sobre nuevas imágenes.
+            </p>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     PIE DE PÁGINA
+========================= -->
+
+<footer>
+
+    <p>
+        Clasificador de Motos |
+        Machine Learning + TensorFlow.js
+    </p>
+
+</footer>
+
+
+<!-- SCRIPT DEL CLASIFICADOR -->
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
